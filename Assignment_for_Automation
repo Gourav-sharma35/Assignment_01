@@ -1,0 +1,63 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.keys import Keys
+import time
+
+a = Options()
+a.add_experimental_option(name="detach", value= True)
+driver = webdriver.Chrome(options = a)
+driver.maximize_window()
+
+
+#1. Open the web browser and navigate to FitPeo Homepage.
+driver.get("https://www.fitpeo.com/")
+
+
+#2. From the homepage, navigate to the Revenue Calculator Page.
+revenue_calculator_link = WebDriverWait(driver, 10).until(
+    EC.element_to_be_clickable((By.XPATH, "//a[@href = '/revenue-calculator']")))
+revenue_calculator_link.click()
+
+
+#3. Scroll down the page until the revenue calculator slider is visible.
+slider_section = WebDriverWait(driver, 10).until(
+    EC.presence_of_element_located((By.XPATH, "//h4[@class = 'MuiTypography-root MuiTypography-h4 crimsonPro css-12siehf']")))
+driver.execute_script("arguments[0].scrollIntoView();", slider_section)
+
+
+#4. Adjust the slider to set its value to 820. we’ve highlighted the slider in red color, Once the slider is moved the bottom text field value should be updated to 820
+text_field = driver.find_element(By.XPATH, "//input[@class = 'MuiInputBase-input MuiOutlinedInput-input MuiInputBase-inputSizeSmall css-1o6z5ng']")
+slider = driver.find_element(By.XPATH, "//span[@class = 'MuiSlider-root MuiSlider-colorPrimary MuiSlider-sizeMedium css-16i48op']")
+text_field.send_keys(Keys.CONTROL + "a")
+text_field.send_keys(Keys.DELETE)
+text_field.send_keys("820")
+#time.sleep(4)
+
+#5. Enter the value 560 in the text field. Now the slider also should change accordingly
+text_field.send_keys(Keys.CONTROL + "a")
+text_field.send_keys(Keys.DELETE)
+text_field.send_keys("560")
+
+#6. Scroll down further and select the checkboxes for CPT-99091, CPT-99453, CPT-99454, and CPT-99474.
+
+combined_xpath = "//*[@class = 'MuiTypography-root MuiTypography-body1 inter css-1s3unkt'] | //input[@class = 'PrivateSwitchBase-input css-1m9pwf3']"
+
+elements = driver.find_elements(By.XPATH, combined_xpath)
+for i in elements:
+    weekname = i.text  # Use .strip() to remove whitespace # Debugging log
+    if weekname == 'CPT-99091' or weekname == 'CPT-99453' or weekname == 'CPT-99454' or weekname == 'CPT-99474':
+        i.click()
+
+#7. Validate Total Recurring Reimbursement:
+
+reimbursement_header = driver.find_element(By.XPATH, "//p[@class = 'MuiTypography-root MuiTypography-body1 inter css-12bch19']")
+
+#8. Verify that the header displaying Total Recurring Reimbursement for all Patients Per Month: shows the value $110700.
+reimbursement_text = reimbursement_header.text.strip()
+print(reimbursement_text)
+assert "$110700" in reimbursement_text, f"Reimbursement value is incorrect, got: {reimbursement_text}"
